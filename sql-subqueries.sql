@@ -38,3 +38,63 @@ WHERE a.actor_id IN (
 		WHERE title = 'Alone Trip'
     )
 );
+
+-- 4. 
+SELECT title
+FROM film
+INNER JOIN film_category ON film.film_id = film_category.film_id
+INNER JOIN category ON film_category.category_id = category.category_id
+WHERE category.name = 'Family';
+
+-- 5. 
+SELECT c.first_name, c.last_name, c.email
+FROM customer c
+JOIN address a ON c.address_id = a.address_id
+JOIN city ci ON a.city_id = ci.city_id
+JOIN country co ON ci.country_id = co.country_id
+WHERE co.country = 'Canada';
+
+-- 6. 
+-- actor
+SELECT actor_id 
+FROM (
+  SELECT actor_id, count(film_id) AS films 
+  FROM film_actor
+  GROUP BY actor_id
+  ORDER BY films DESC
+  LIMIT 1) AS s;
+-- films
+SELECT fi.title 
+FROM film_actor AS fa 
+JOIN film AS fi ON fa.film_id = fi.film_id
+WHERE actor_id = (
+    SELECT actor_id 
+    FROM (
+      SELECT actor_id, count(film_id) AS films 
+      FROM film_actor
+      GROUP BY actor_id
+      ORDER BY films DESC
+      LIMIT 1) AS s1);
+
+-- 7.
+SELECT film.title
+FROM film
+JOIN inventory ON film.film_id = inventory.film_id
+JOIN rental ON inventory.inventory_id = rental.inventory_id
+JOIN payment ON rental.rental_id = payment.rental_id
+WHERE payment.customer_id = (
+    SELECT customer_id 
+    FROM payment 
+    GROUP BY customer_id 
+    ORDER BY SUM(amount) DESC 
+    LIMIT 1
+);
+
+-- 8. 
+SELECT customer_id, SUM(amount) as total_amount_spent
+FROM payment
+GROUP BY customer_id
+HAVING total_amount_spent > (SELECT AVG(total_amount_spent)
+                         FROM (SELECT SUM(amount) as total_amount_spent
+                                FROM sakila.payment
+                                GROUP BY customer_id) as subquery);
